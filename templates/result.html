@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hasil Analisis - Deteksi Cyberbullying</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding-top: 20px;
+            padding-bottom: 50px;
+        }
+        .card {
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            border: none;
+            margin-top: 20px;
+        }
+        .result-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+        .text-bullying { 
+            color: #dc3545; 
+        }
+        .text-non-bullying { 
+            color: #28a745; 
+        }
+        .bg-glass {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+        .suggestion-item {
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 8px;
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+        }
+        .back-button {
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+        .back-button:hover {
+            transform: translateX(-5px);
+        }
+        .text-box {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 5px solid #6c757d;
+            font-style: italic;
+            line-height: 1.6;
+        }
+        .confidence-bar {
+            height: 25px;
+            border-radius: 12px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+        .progress-label {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            color: white;
+            font-weight: bold;
+            line-height: 25px;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-10 col-xl-8">
+                
+                <!-- Back Button -->
+                <a href="/" class="btn btn-outline-light back-button">
+                    <i class="fas fa-arrow-left me-2"></i>Kembali ke Analisis
+                </a>
+
+                <!-- Main Result Card -->
+                <div class="card mb-4">
+                    <div class="card-header text-white bg-primary py-3">
+                        <h3 class="mb-0">
+                            <i class="fas fa-chart-bar me-2"></i>Hasil Analisis Teks
+                        </h3>
+                    </div>
+                    
+                    <div class="card-body p-4">
+                        
+                        <!-- Section 1: Original Text -->
+                        <div class="mb-4">
+                            <h5 class="mb-3 text-primary">
+                                <i class="fas fa-quote-left me-2"></i>Teks yang Dianalisis:
+                            </h5>
+                            <div class="text-box">
+                                {% if text %}
+                                    "{{ text }}"
+                                {% else %}
+                                    Teks tidak tersedia
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Section 2: Prediction Result -->
+                        <div class="text-center mb-5">
+                            <div class="result-icon">
+                                {% if prediction == 'Bullying' %}
+                                    <i class="fas fa-exclamation-triangle text-bullying"></i>
+                                {% else %}
+                                    <i class="fas fa-check-circle text-non-bullying"></i>
+                                {% endif %}
+                            </div>
+                            
+                            <h1 class="display-5 fw-bold mb-3 
+                                {% if prediction == 'Bullying' %}text-bullying{% else %}text-non-bullying{% endif %}">
+                                {% if prediction %}
+                                    {{ prediction }}
+                                {% else %}
+                                    Tidak Diketahui
+                                {% endif %}
+                            </h1>
+                            
+                            <!-- Confidence Level -->
+                            <div class="mb-4">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="text-muted">Tingkat Kepercayaan:</span>
+                                    <span class="fw-bold fs-5">{{ confidence|default(0) }}%</span>
+                                </div>
+                                
+                                <div class="position-relative confidence-bar">
+                                    <div class="progress-label">{{ confidence|default(0) }}%</div>
+                                    <div class="progress h-100">
+                                        <div class="progress-bar 
+                                            {% if prediction == 'Bullying' %}bg-danger{% else %}bg-success{% endif %}" 
+                                            role="progressbar" 
+                                            style="width: {{ confidence|default(0) }}%;""
+                                            aria-valuenow="{{ confidence|default(0) }}" 
+                                            aria-valuemin="0" 
+                                            aria-valuemax="100">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section 3: Explanation -->
+                        <div class="mb-4">
+                            <h5 class="mb-3 text-primary">
+                                <i class="fas fa-info-circle me-2"></i>Penjelasan Hasil:
+                            </h5>
+                            <div class="alert 
+                                {% if prediction == 'Bullying' %}alert-danger{% else %}alert-success{% endif %} 
+                                border-0 shadow-sm">
+                                <div class="d-flex">
+                                    <div class="flex-shrink-0">
+                                        <i class="fas 
+                                            {% if prediction == 'Bullying' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %} 
+                                            me-2 mt-1"></i>
+                                    </div>
+                                    <div>
+                                        <strong>Analisis Sistem:</strong>
+                                        <p class="mb-0 mt-1">
+                                            {% if explanation %}
+                                                {{ explanation }}
+                                            {% elif prediction == 'Bullying' %}
+                                                Teks mengandung pola kata-kata yang dikenali oleh model sebagai indikasi cyberbullying.
+                                            {% else %}
+                                                Teks tidak menunjukkan pola yang mengindikasikan cyberbullying berdasarkan training model.
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section 4: Suggestions -->
+                        <div class="mb-4">
+                            <h5 class="mb-3 text-primary">
+                                <i class="fas fa-lightbulb me-2"></i>Saran & Rekomendasi:
+                            </h5>
+                            <div class="row g-3">
+                                {% if suggestions and suggestions|length > 0 %}
+                                    {% for suggestion in suggestions %}
+                                    <div class="col-md-6">
+                                        <div class="suggestion-item d-flex align-items-center">
+                                            <i class="fas fa-chevron-right text-primary me-3"></i>
+                                            <span>{{ suggestion }}</span>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                    {% if prediction == 'Bullying' %}
+                                    <div class="col-md-6">
+                                        <div class="suggestion-item">
+                                            <i class="fas fa-chevron-right text-primary me-2"></i>
+                                            Pertimbangkan untuk menggunakan bahasa yang lebih sopan
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="suggestion-item">
+                                            <i class="fas fa-chevron-right text-primary me-2"></i>
+                                            Hindari kata-kata yang bersifat menghina atau merendahkan
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="suggestion-item">
+                                            <i class="fas fa-chevron-right text-primary me-2"></i>
+                                            Fokus pada kritik yang konstruktif, bukan personal
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="suggestion-item">
+                                            <i class="fas fa-chevron-right text-primary me-2"></i>
+                                            Gunakan emoji atau emoticon positif untuk meredam kesan negatif
+                                        </div>
+                                    </div>
+                                    {% else %}
+                                    <div class="col-md-6">
+                                        <div class="suggestion-item">
+                                            <i class="fas fa-chevron-right text-success me-2"></i>
+                                            Terus pertahankan komunikasi yang positif
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="suggestion-item">
+                                            <i class="fas fa-chevron-right text-success me-2"></i>
+                                            Bahasa yang digunakan sudah baik dan sopan
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="suggestion-item">
+                                            <i class="fas fa-chevron-right text-success me-2"></i>
+                                            Pertimbangkan untuk memberikan apresiasi positif
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="suggestion-item">
+                                            <i class="fas fa-chevron-right text-success me-2"></i>
+                                            Tetaplah menjadi contoh komunikasi digital yang baik
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Section 5: Technical Information -->
+                        <div class="mb-4">
+                            <h5 class="mb-3 text-primary">
+                                <i class="fas fa-cogs me-2"></i>Informasi Teknis Sistem:
+                            </h5>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <div class="card h-100 border-0 bg-light">
+                                        <div class="card-body">
+                                            <h6 class="card-title text-primary">
+                                                <i class="fas fa-brain me-2"></i>Model Machine Learning
+                                            </h6>
+                                            <ul class="list-unstyled mb-0">
+                                                <li><strong>Algoritma:</strong> Support Vector Machine (SVM)</li>
+                                                <li><strong>Akurasi:</strong> 97% (data uji)</li>
+                                                <li><strong>Vectorizer:</strong> TF-IDF</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <div class="card h-100 border-0 bg-light">
+                                        <div class="card-body">
+                                            <h6 class="card-title text-primary">
+                                                <i class="fas fa-server me-2"></i>Infrastruktur
+                                            </h6>
+                                            <ul class="list-unstyled mb-0">
+                                                <li><strong>Backend:</strong> Flask Python</li>
+                                                <li><strong>Deployment:</strong> Railway</li>
+                                                <li><strong>Response Time:</strong> &lt; 1 detik</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section 6: Action Buttons -->
+                        <div class="d-flex flex-column flex-md-row justify-content-center gap-3 mt-4 pt-3 border-top">
+                            <a href="/" class="btn btn-primary btn-lg px-4 py-3">
+                                <i class="fas fa-redo me-2"></i>Analisis Teks Lainnya
+                            </a>
+                            <button onclick="copyResults()" class="btn btn-outline-secondary btn-lg px-4 py-3">
+                                <i class="far fa-copy me-2"></i>Salin Hasil
+                            </button>
+                            <button onclick="shareResults()" class="btn btn-outline-info btn-lg px-4 py-3">
+                                <i class="fas fa-share-alt me-2"></i>Bagikan
+                            </button>
+                        </div>
+
+                    </div>
+                    
+                    <div class="card-footer bg-light py-3">
+                        <div class="text-center text-muted">
+                            <small>
+                                <i class="fas fa-code me-1"></i>
+                                Sistem Deteksi Cyberbullying
+                                <i class="fas fa-university ms-2 me-1"></i>
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Info Box -->
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">
+                            <i class="fas fa-history me-2"></i>Tentang Sistem Ini
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-2">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            Sistem ini menggunakan model Machine Learning yang telah dilatih dengan dataset cyberbullying.
+                        </p>
+                        <p class="mb-2">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            Hasil analisis bersifat prediktif berdasarkan pola yang dipelajari model.
+                        </p>
+                        
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JavaScript -->
+    <script>
+        // Fungsi untuk menyalin hasil ke clipboard
+        function copyResults() {
+            const textToCopy = `HASIL ANALISIS CYBERBULLYING\n` +
+                             `============================\n` +
+                             `Teks: "${'{{ text|default("")|replace("\"", "\\\"") }}'}"\n` +
+                             `Hasil: {{ prediction|default("Tidak Diketahui") }}\n` +
+                             `Tingkat Kepercayaan: {{ confidence|default(0) }}%\n` +
+                             `\n` +
+                             `Sistem Deteksi Cyberbullying\n` +
+                             `Tugas Besar Pemrosesan Teks\n` +
+                             `Model SVM - Akurasi 97%`;
+            
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                // Tampilkan toast atau alert
+                showAlert('Hasil berhasil disalin ke clipboard!', 'success');
+            }).catch(err => {
+                console.error('Gagal menyalin: ', err);
+                showAlert('Gagal menyalin ke clipboard', 'danger');
+            });
+        }
+
+        // Fungsi untuk berbagi hasil (simulasi)
+        function shareResults() {
+            const textToShare = `Saya baru menganalisis teks dengan sistem Deteksi Cyberbullying.\n` +
+                              `Hasil: {{ prediction|default("Tidak Diketahui") }}\n` +
+                              `Coba di: ${window.location.origin}`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Hasil Deteksi Cyberbullying',
+                    text: textToShare,
+                    url: window.location.origin
+                });
+            } else {
+                showAlert('Fitur share tidak didukung di browser ini. Silakan salin URL secara manual.', 'info');
+            }
+        }
+
+        // Fungsi untuk menampilkan alert sementara
+        function showAlert(message, type) {
+            // Buat elemen alert
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+            alertDiv.style.cssText = `
+                top: 20px;
+                right: 20px;
+                z-index: 9999;
+                min-width: 300px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            `;
+            
+            alertDiv.innerHTML = `
+                <strong>${type === 'success' ? 'Sukses!' : 'Info'}</strong> ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.body.appendChild(alertDiv);
+            
+            // Hapus otomatis setelah 3 detik
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 3000);
+        }
+
+        // Animasi progress bar saat halaman dimuat
+        document.addEventListener('DOMContentLoaded', function() {
+            const progressBar = document.querySelector('.progress-bar');
+            if (progressBar) {
+                const width = progressBar.style.width;
+                progressBar.style.width = '0%';
+                
+                setTimeout(() => {
+                    progressBar.style.transition = 'width 1.5s ease-in-out';
+                    progressBar.style.width = width;
+                }, 500);
+            }
+        });
+    </script>
+</body>
+</html>
